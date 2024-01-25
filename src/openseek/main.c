@@ -20,16 +20,11 @@ int main(void) {
         libusb_exit(NULL);
         return 1;
     }
+    device->set_platform(device, SEEK_ANDROID_TARGET);
 
-    printf("Firmware version: %i.%i.%i.%i\n", device->fw_version[0], device->fw_version[1], device->fw_version[2], device->fw_version[3]);
-    printf(
-        "Chip ID:          %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
-        device->chip_id[0], device->chip_id[1], device->chip_id[2], device->chip_id[3],
-        device->chip_id[4], device->chip_id[5], device->chip_id[6], device->chip_id[7],
-        device->chip_id[8], device->chip_id[9], device->chip_id[10], device->chip_id[11]
-    );
-
-    printf("%p\n", device->_request_get);
+    printf("Firmware version: %s\n", device->pretty_fw_version(device));
+    printf("Chip ID:          %s\n", device->pretty_chip_id(device));
+    printf("Platform:         %s\n", device->pretty_platform(device));
 
     seek_deinit_device(device);
     libusb_exit(NULL);
