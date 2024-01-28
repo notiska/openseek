@@ -4,6 +4,10 @@
 // FIXME: libusb-1.0 ??? WTF arch!!!
 #include <libusb-1.0/libusb.h>
 
+#include "openseek/error.h"
+
+#define SEEK_WORD_SIZE 2
+
 /**
  * Seek custom URB "commands".
  * References:
@@ -56,12 +60,27 @@ typedef enum {
     _SEEK_TARGET_PLATFORM                 = 84,
 
     _SEEK_SET_FIRMWARE_INFO_FEATURES      = 85,
-    _SEEK_FACTORY_SETTINGS_FEATURES       = 86,
+
+    _SEEK_SET_FACTORY_SETTINGS_FEATURES   = 86,
     _SEEK_SET_FACTORY_SETTINGS            = 87,
     _SEEK_GET_FACTORY_SETTINGS            = 88,
 
     _SEEK_RESET_DEVICE                    = 89,
+
+    // TODO: Appears to be an unknown command 93 in later APKs.
+
 } _seekcommand_t;
+
+/**
+ * Current Seek device operation mode. Not to be confused with what is labelled as the "status" in the APK.
+ * References:
+ *  - `com.tyriansystems.Seekware.SeekwareDevice` (Seek Thermal APK 1.9.1)
+ */
+typedef enum {
+    SEEK_SLEEPING       = 0,
+    SEEK_RUNNING        = 1,
+    SEEK_RUNNING_NO_AGC = 2, // TODO: Can't actually get this to work? More experimentation needed.
+} seekopmode_t;
 
 /**
  * The platform that the Seek device is talking to.
@@ -77,35 +96,62 @@ typedef enum {
     SEEK_IOS_TARGET     = 3,
 } seekplatform_t;
 
-typedef struct _SeekDevice seekdevice_t;
+/**
+ * Various factory settings features.
+ * References:
+ *  - `com.tyriansystems.Seekware.SeekwarePhysicalDevice.readLensInfo()` (Seek Thermal APK 1.9.1)
+ *  - `com.tyriansystems.Seekware.SeekwarePhysicalDevice.readSerialFromDevice()` (Seek Thermal APK 1.9.1)
+ */
+typedef enum {
+    SEEK_SERIAL_NO  = 8,
+    SEEK_LENS_FOV   = 1536,
+    SEEK_LENS_FOCUS = 1537,
+} seeksetting_factory_feature_t; // FIXME: Yeah, not the best naming...
 
+typedef struct _SeekDevice seekdevice_t;
 struct _SeekDevice {
     libusb_device_handle *handle;
     int                   timeout; // libusb timeout to use.
 
+    // https://github.com/seekthermal/seekcamera-python/blob/main/seekcamera/camera.py#L78
+    // Supposedly product.variant.major.minor. Interestingly enough, you can read more than 4 bytes though.
     unsigned char         fw_version[4];
     unsigned char         chip_id[12];
 
     seekplatform_t        _platform;
 
-    /* ------------------------------ Public "Methods" ------------------------------ */
-
-    char* (*pretty_fw_version)(seekdevice_t *device);
-    char*    (*pretty_chip_id)(seekdevice_t *device);
-    char*   (*pretty_platform)(seekdevice_t *device);
-
-    // TODO: Documentation!!!!
-
-    seekplatform_t (*platform)(seekdevice_t *device);
-    int        (*set_platform)(seekdevice_t *device, seekplatform_t platform);
-
-    /* ------------------------------ Hidden "Methods" ------------------------------ */
+    /* ------------------------------ Hidden ------------------------------ */
 
     int (*_request_set)(seekdevice_t *device, _seekcommand_t command, unsigned char *data, int data_len);
     int (*_request_get)(seekdevice_t *device, _seekcommand_t command, unsigned char *data, int data_len);
+
+    /* ------------------------------ Public ------------------------------ */
+
+    seekerror_t (*start_frame_transfer)(seekdevice_t *device, int frame_size);
+    seekerror_t  (*get_factory_setting)(
+        seekdevice_t *device, seeksetting_factory_feature_t feature, unsigned char *data, int data_len
+    );
+    // seekerror_t (*reset)(seekdevice_t *device);
+
+    /* ------------------------------ Setters / Getters ------------------------------ */
+
+    // TODO: Documentation!!!!
+
+    seekopmode_t      (*opmode)(seekdevice_t *device);
+    seekerror_t   (*set_opmode)(seekdevice_t *device, seekopmode_t opmode);
+
+    seekplatform_t  (*platform)(seekdevice_t *device);
+    seekerror_t (*set_platform)(seekdevice_t *device, seekplatform_t platform);
+
+    /* ------------------------------ Pretty ------------------------------ */
+
+    char* (*pretty_fw_version)(seekdevice_t *device);
+    char*    (*pretty_chip_id)(seekdevice_t *device);
+    char*     (*pretty_opmode)(seekdevice_t *device);
+    char*   (*pretty_platform)(seekdevice_t *device);
 };
 
-enum InitOptions {
+enum SeekInitOptions {
     SEEK_READ_FW_VERSION = 0x01,
     SEEK_READ_CHIP_ID    = 0x02,
 };
@@ -116,10 +162,11 @@ enum InitOptions {
  * @param device The device to initialise.
  * @param vendor_id The USB vendor ID.
  * @param product_id The USB product ID.
- * @param options The initialisation options, see {@link InitOptions}.
- * @return 0 if successful, otherwise a libusb error.
+ * @param options The initialisation options, see {@link SeekInitOptions}.
+ * @return 0 if successful, otherwise an error code.
  */
-int seek_init_device(seekdevice_t **device, int vendor_id, int product_id, int options);
+// TODO: Custom errors.
+seekerror_t seek_init_device(seekdevice_t **device, int vendor_id, int product_id, int options);
 
 /**
  * Deinitialises a Seek device.
