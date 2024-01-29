@@ -44,6 +44,19 @@ seekerror_t start_frame_transfer(seekdevice_t *device, int frame_size) {
     return _request_get(device, _SEEK_START_GET_IMAGE_TRANSFER, data, 4);
 }
 
+seekerror_t get_firmware_info(seekdevice_t *device, seekfirmare_feature_t feature, unsigned char *data, int data_len) {
+    unsigned char feature_data[2] = { (unsigned char)feature, (unsigned char)(feature >> 8) };
+
+    int res = _request_set(device, _SEEK_SET_FIRMWARE_INFO_FEATURES, feature_data, 2);
+    if (res < 0) return -res;
+
+    res = _request_set(device, _SEEK_GET_FIRMWARE_INFO, data, data_len);
+    if (res != data_len) {
+        return res < 0 ? -res : SEEK_ERROR_UNKNOWN; // TODO: Underflow error.
+    }
+    return SEEK_ERROR_NONE;
+}
+
 seekerror_t get_factory_setting(seekdevice_t *device, seeksetting_factory_feature_t feature, unsigned char *data, int data_len) {
     int word_size = data_len / SEEK_WORD_SIZE;
     unsigned char feature_data[6] = { 
@@ -161,6 +174,7 @@ seekerror_t seek_init_device(seekdevice_t **device, int vendor_id, int product_i
     (*device)->_request_get = &_request_get;
 
     (*device)->start_frame_transfer = &start_frame_transfer;
+    (*device)->get_firmware_info    = &get_firmware_info;
     (*device)->get_factory_setting  = &get_factory_setting;
     // (*device)->reset = &reset;
 

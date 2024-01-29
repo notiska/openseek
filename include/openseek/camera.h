@@ -31,7 +31,7 @@ typedef enum {
 /**
  * The type of Seek device.
  * References:
- *  - `com.tyriansystems.Seekware.c$b` (Seek Thermal APK 2.3.0)
+ *  - `com.tyriansystems.Seekware.c$b` (Seek Thermal APK 2.3)
  */
 typedef enum {
     SEEK_COMPACT           = 0,
@@ -49,6 +49,7 @@ struct _SeekCamera {
     seekdevice_t     *device;
     seekcameratype_t  type;
 
+    int               hw_version;
     unsigned char     serial_no[12];
 
     seeklens_fov_t    lens_fov;

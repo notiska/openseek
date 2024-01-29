@@ -32,37 +32,44 @@ seekerror_t seek_init_camera(seekcamera_t **camera, seekdevice_t *device) {
         if (!res) return res;
     }
 
-read_info:
-    {
-        seekerror_t res = device->get_factory_setting(device, SEEK_SERIAL_NO, (*camera)->serial_no, 12);
-        if (res) return res;
-    }
+read_info:;
+    unsigned char data[2];
+    seekerror_t res;
 
-    (*camera)->lens_fov   = SEEK_FOV_NONE;
-    (*camera)->lens_focus = SEEK_FOCUS_NONE;
+    // Interestingly enough, the Seek CompactPRO seems to be able to read up to 20 bytes, though discards the last
+    // 18. The Compact only reads 2 bytes, though.
+    res = device->get_firmware_info(device, SEEK_HARDWARE_VERSION, data, 2);
+    if (res) return res;
+    (*camera)->hw_version = data[0] | data[1] << 8;
 
-    { // Reading lens FOV.
-        unsigned char data[2];
-        seekerror_t res = device->get_factory_setting(device, SEEK_LENS_FOV, data, 2);
-        if (!res) {
-            switch (data[0] | data[1] << 8) {
-                case 0:     { (*camera)->lens_fov = SEEK_FOV_WIDE;   break; }
-                case 1:     { (*camera)->lens_fov = SEEK_FOV_NARROW; break; }
-                case 65535: { (*camera)->lens_fov = SEEK_FOV_WIDE;   break; }
-            }
+    res = device->get_factory_setting(device, SEEK_SERIAL_NO, (*camera)->serial_no, 12);
+    if (res) return res;
+
+    (*camera)->lens_fov = SEEK_FOV_NONE;
+    res = device->get_factory_setting(device, SEEK_LENS_FOV, data, 2);
+    if (!res) {
+        switch (data[0] | data[1] << 8) {
+            case 0:     { (*camera)->lens_fov = SEEK_FOV_WIDE;   break; }
+            case 1:     { (*camera)->lens_fov = SEEK_FOV_NARROW; break; }
+            case 65535: { (*camera)->lens_fov = SEEK_FOV_WIDE;   break; }
         }
     }
-    { // Reading lens focus type.
-        unsigned char data[2];
-        seekerror_t res = device->get_factory_setting(device, SEEK_LENS_FOCUS, data, 2);
-        if (!res) {
-            switch (data[0] | data[1] << 8) {
-                case 0:     { (*camera)->lens_focus = SEEK_FOCUS_FIXED;  break; }
-                case 1:     { (*camera)->lens_focus = SEEK_FOCUS_MANUAL; break; }
-                case 65535: { (*camera)->lens_focus = SEEK_FOCUS_FIXED;  break; }
-            }
+
+    (*camera)->lens_focus = SEEK_FOCUS_NONE;
+    res = device->get_factory_setting(device, SEEK_LENS_FOCUS, data, 2);
+    if (!res) {
+        switch (data[0] | data[1] << 8) {
+            case 0:     { (*camera)->lens_focus = SEEK_FOCUS_FIXED;  break; }
+            case 1:     { (*camera)->lens_focus = SEEK_FOCUS_MANUAL; break; }
+            case 65535: { (*camera)->lens_focus = SEEK_FOCUS_FIXED;  break; }
         }
     }
 
     return SEEK_ERROR_NONE;
+}
+
+void seek_deinit_camera(seekcamera_t *camera) {
+    camera->device->set_opmode(camera->device, SEEK_SLEEPING); // Idle before we free the device.
+    seek_deinit_device(camera->device);
+    free(camera);
 }

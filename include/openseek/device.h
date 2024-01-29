@@ -97,6 +97,25 @@ typedef enum {
 } seekplatform_t;
 
 /**
+ * Various firmware info features.
+ * References:
+ *  - `com.subi.usb.CustomRequests$FirmwareInfoFeatureIndex` (Seek Thermal APK 1.9.1)
+ *  - `com.tyriansystems.Seekware.o$i.a()` (Seek Thermal APK 2.3)
+ */
+typedef enum {
+    SEEK_FIRMWARE_VERSION = 0,
+
+    // FIXME: Can't actually get the debug log to work as of right now.
+    SEEK_DEBUG_LOG_LENGTH = 13,
+    SEEK_DEBUG_LOG        = 14,
+
+    SEEK_HARDWARE_VERSION = 16,
+
+    // TODO: 21 and 23 are also referenced in the APK, both of which being 64 bytes. Unfortunately, at least in the 2.3
+    //       APK, these aren't actually used - so I can't determine what they are.
+} seekfirmare_feature_t;
+
+/**
  * Various factory settings features.
  * References:
  *  - `com.tyriansystems.Seekware.SeekwarePhysicalDevice.readLensInfo()` (Seek Thermal APK 1.9.1)
@@ -128,6 +147,9 @@ struct _SeekDevice {
     /* ------------------------------ Public ------------------------------ */
 
     seekerror_t (*start_frame_transfer)(seekdevice_t *device, int frame_size);
+    seekerror_t    (*get_firmware_info)(
+        seekdevice_t *device, seekfirmare_feature_t feature, unsigned char *data, int data_len
+    );
     seekerror_t  (*get_factory_setting)(
         seekdevice_t *device, seeksetting_factory_feature_t feature, unsigned char *data, int data_len
     );

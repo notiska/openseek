@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "openseek/device.h"
+#include "openseek/camera.h"
 
 #define VENDOR_ID  0x289d
 #define PRODUCT_ID 0x0011
@@ -12,14 +12,17 @@ int main(void) {
         return 1;
     }
 
-    seekdevice_t *device;
+    seekcamera_t *camera;
 
-    int res = seek_init_device(&device, VENDOR_ID, PRODUCT_ID, SEEK_READ_FW_VERSION | SEEK_READ_CHIP_ID);
+    seekerror_t res = seek_init_camera(&camera, NULL);
     if (res) {
         fprintf(stderr, "Failed to initialise Seek Thermal device: %i (%s).\n", res, seek_error_name(res));
         libusb_exit(NULL);
         return 1;
     }
+
+    seekdevice_t *device = camera->device;
+
     device->set_platform(device, SEEK_ANDROID_TARGET);
 
     char *pretty_fw_version = device->pretty_fw_version(device);
@@ -32,6 +35,8 @@ int main(void) {
     printf("Operation mode:   %s\n", pretty_opmode);
     printf("Platform:         %s\n", pretty_platform);
 
+    printf("Hardware:         v%i\n", camera->hw_version);
+
     free(pretty_fw_version);
     free(pretty_chip_id);
     free(pretty_opmode);
@@ -41,6 +46,6 @@ int main(void) {
     // TODO: Stuff
     device->set_opmode(device, SEEK_SLEEPING);
 
-    seek_deinit_device(device);
+    seek_deinit_camera(camera);
     libusb_exit(NULL);
 }
