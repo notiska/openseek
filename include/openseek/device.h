@@ -88,12 +88,12 @@ typedef enum {
  *  - `com.subi.usb.CustomRequests$TargetPlatform` (Seek Thermal APK 1.9.1)
  */
 typedef enum {
-    SEEK_UNKNOWN_TARGET = -1, // Note: not actually recognised by the device.
+    SEEK_TARGET_UNKNOWN = -1, // Note: not actually recognised by the device.
 
-    SEEK_WINDOWS_TARGET = 0,
-    SEEK_ANDROID_TARGET = 1,
-    SEEK_MACOS_TARGET   = 2,
-    SEEK_IOS_TARGET     = 3,
+    SEEK_TARGET_WINDOWS = 0,
+    SEEK_TARGET_ANDROID = 1,
+    SEEK_TARGET_MACOS   = 2,
+    SEEK_TARGET_IOS     = 3,
 } seekplatform_t;
 
 /**
@@ -116,7 +116,7 @@ typedef enum {
 } seekfirmare_feature_t;
 
 /**
- * Various factory settings features.
+ * Various factory device features.
  * References:
  *  - `com.tyriansystems.Seekware.SeekwarePhysicalDevice.readLensInfo()` (Seek Thermal APK 1.9.1)
  *  - `com.tyriansystems.Seekware.SeekwarePhysicalDevice.readSerialFromDevice()` (Seek Thermal APK 1.9.1)
@@ -125,7 +125,7 @@ typedef enum {
     SEEK_SERIAL_NO  = 8,
     SEEK_LENS_FOV   = 1536,
     SEEK_LENS_FOCUS = 1537,
-} seeksetting_factory_feature_t; // FIXME: Yeah, not the best naming...
+} seekfactory_feature_t;
 
 typedef struct _SeekDevice seekdevice_t;
 struct _SeekDevice {
@@ -151,7 +151,7 @@ struct _SeekDevice {
         seekdevice_t *device, seekfirmare_feature_t feature, unsigned char *data, int data_len
     );
     seekerror_t  (*get_factory_setting)(
-        seekdevice_t *device, seeksetting_factory_feature_t feature, unsigned char *data, int data_len
+        seekdevice_t *device, seekfactory_feature_t feature, unsigned char *data, int data_len
     );
     // seekerror_t (*reset)(seekdevice_t *device);
 

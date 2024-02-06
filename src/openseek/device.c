@@ -17,7 +17,7 @@ int _request_set(seekdevice_t *device, _seekcommand_t command, unsigned char *da
 
     switch (res) {
         case LIBUSB_ERROR_TIMEOUT:   return -SEEK_ERROR_TIMEOUT;
-        case LIBUSB_ERROR_PIPE:      return -SEEK_ERROR_PIPE;
+        case LIBUSB_ERROR_PIPE:      return -SEEK_ERROR_BROKEN_PIPE;
         case LIBUSB_ERROR_NO_DEVICE: return -SEEK_ERROR_NO_DEVICE;
         case LIBUSB_ERROR_BUSY:      return -SEEK_ERROR_DEVICE_BUSY;
         default:                     return -SEEK_ERROR_UNKNOWN;
@@ -30,7 +30,7 @@ int _request_get(seekdevice_t *device, _seekcommand_t command, unsigned char *da
 
     switch (res) {
         case LIBUSB_ERROR_TIMEOUT:   return -SEEK_ERROR_TIMEOUT;
-        case LIBUSB_ERROR_PIPE:      return -SEEK_ERROR_PIPE;
+        case LIBUSB_ERROR_PIPE:      return -SEEK_ERROR_BROKEN_PIPE;
         case LIBUSB_ERROR_NO_DEVICE: return -SEEK_ERROR_NO_DEVICE;
         case LIBUSB_ERROR_BUSY:      return -SEEK_ERROR_DEVICE_BUSY;
         default:                     return -SEEK_ERROR_UNKNOWN;
@@ -57,7 +57,7 @@ seekerror_t get_firmware_info(seekdevice_t *device, seekfirmare_feature_t featur
     return SEEK_ERROR_NONE;
 }
 
-seekerror_t get_factory_setting(seekdevice_t *device, seeksetting_factory_feature_t feature, unsigned char *data, int data_len) {
+seekerror_t get_factory_setting(seekdevice_t *device, seekfactory_feature_t feature, unsigned char *data, int data_len) {
     int word_size = data_len / SEEK_WORD_SIZE;
     unsigned char feature_data[6] = { 
         (unsigned char)word_size, (unsigned char)(word_size >> 8),
@@ -147,11 +147,11 @@ char *pretty_platform(seekdevice_t *device) {
     char *pretty = malloc(sizeof(char) * 8);
     switch (device->_platform) {
         default:
-        case SEEK_UNKNOWN_TARGET: { strcpy(pretty, "Unknown"); break; }
-        case SEEK_WINDOWS_TARGET: { strcpy(pretty, "Windows"); break; }
-        case SEEK_ANDROID_TARGET: { strcpy(pretty, "Android"); break; }
-        case SEEK_MACOS_TARGET:   { strcpy(pretty, "MacOS");   break; }
-        case SEEK_IOS_TARGET:     { strcpy(pretty, "IOS");     break; }
+        case SEEK_TARGET_UNKNOWN: { strcpy(pretty, "Unknown"); break; }
+        case SEEK_TARGET_WINDOWS: { strcpy(pretty, "Windows"); break; }
+        case SEEK_TARGET_ANDROID: { strcpy(pretty, "Android"); break; }
+        case SEEK_TARGET_MACOS:   { strcpy(pretty, "MacOS");   break; }
+        case SEEK_TARGET_IOS:     { strcpy(pretty, "iOS");     break; }
     }
     return pretty;
 }
@@ -166,7 +166,7 @@ seekerror_t seek_init_device(seekdevice_t **device, int vendor_id, int product_i
     if (!(*device)->handle) return SEEK_ERROR_NO_DEVICE;
 
     (*device)->timeout = 1000;
-    (*device)->_platform = SEEK_UNKNOWN_TARGET;
+    (*device)->_platform = SEEK_TARGET_UNKNOWN;
 
     // Beware: evil "method" trickery follows!!!
 
@@ -230,7 +230,7 @@ seekerror_t seek_init_device(seekdevice_t **device, int vendor_id, int product_i
         }
     }
 
-    // set_platform(*device, SEEK_ANDROID_TARGET);
+    // set_platform(*device, SEEK_TARGET_ANDROID);
 
     // FIXME: Should we warn about not being able to read these?
     if (options & SEEK_READ_FW_VERSION) _request_get(*device, _SEEK_GET_FIRMWARE_INFO, (*device)->fw_version, 4);

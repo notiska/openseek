@@ -14,7 +14,7 @@ typedef enum {
     SEEK_ERROR_NO_DEVICE   = 2,
     SEEK_ERROR_DEVICE_BUSY = 3,
     SEEK_ERROR_TIMEOUT     = 4,
-    SEEK_ERROR_PIPE        = 5,
+    SEEK_ERROR_BROKEN_PIPE = 5,
 
     SEEK_ERROR_NO_MEM      = 6,
 } seekerror_t;

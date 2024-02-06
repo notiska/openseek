@@ -35,13 +35,13 @@ typedef enum {
  */
 typedef enum {
     SEEK_COMPACT           = 0,
-    SEEK_COMPACT_XR        = 1,
-    SEEK_COMPACT_FF        = 2,
-    SEEK_COMPACT_XR_FF     = 3,
+    // SEEK_COMPACT_XR        = 1,
+    // SEEK_COMPACT_FF        = 2,
+    // SEEK_COMPACT_XR_FF     = 3,
     SEEK_COMPACT_PRO       = 4,
-    SEEK_COMPACT_PRO_XR    = 5,
-    SEEK_COMPACT_PRO_FF    = 6,
-    SEEK_COMPACT_PRO_XR_FF = 7,
+    // SEEK_COMPACT_PRO_XR    = 5,
+    // SEEK_COMPACT_PRO_FF    = 6,
+    // SEEK_COMPACT_PRO_XR_FF = 7,
 } seekcameratype_t;
 
 typedef struct _SeekCamera seekcamera_t;

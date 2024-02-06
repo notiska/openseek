@@ -23,7 +23,7 @@ int main(void) {
 
     seekdevice_t *device = camera->device;
 
-    device->set_platform(device, SEEK_ANDROID_TARGET);
+    device->set_platform(device, SEEK_TARGET_ANDROID);
 
     char *pretty_fw_version = device->pretty_fw_version(device);
     char *pretty_chip_id    = device->pretty_chip_id(device);

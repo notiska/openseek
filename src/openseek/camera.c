@@ -11,9 +11,6 @@ seekerror_t seek_init_camera(seekcamera_t **camera, seekdevice_t *device) {
     if (!(*camera)) return SEEK_ERROR_NO_MEM;
 
     (*camera)->device = device;
-    (*camera)->type = SEEK_COMPACT; // Default assumption.
-    // TODO: Can we get the vendor and product IDs from the libusb handle? If so - we can determine a candidate for the
-    //       device type that way.
 
     if (!device) {
         seekerror_t res = seek_init_device(
@@ -30,6 +27,16 @@ seekerror_t seek_init_camera(seekcamera_t **camera, seekdevice_t *device) {
             /* options */ SEEK_READ_FW_VERSION | SEEK_READ_CHIP_ID
         );
         if (!res) return res;
+    } else {
+        struct libusb_device_descriptor descriptor;
+        int res = libusb_get_device_descriptor(libusb_get_device(device->handle), &descriptor);
+        if (res < 0) return SEEK_ERROR_UNKNOWN;
+
+        if (descriptor.idProduct == SEEK_PRODUCT_ID) {
+            (*camera)->type = SEEK_COMPACT_PRO;
+        } else {
+            (*camera)->type = SEEK_COMPACT;
+        }
     }
 
 read_info:;
@@ -40,7 +47,7 @@ read_info:;
     // 18. The Compact only reads 2 bytes, though.
     res = device->get_firmware_info(device, SEEK_HARDWARE_VERSION, data, 2);
     if (res) return res;
-    (*camera)->hw_version = data[0] | data[1] << 8;
+    (*camera)->hw_version = data[1] << 8 | data[0];
 
     res = device->get_factory_setting(device, SEEK_SERIAL_NO, (*camera)->serial_no, 12);
     if (res) return res;
@@ -48,7 +55,7 @@ read_info:;
     (*camera)->lens_fov = SEEK_FOV_NONE;
     res = device->get_factory_setting(device, SEEK_LENS_FOV, data, 2);
     if (!res) {
-        switch (data[0] | data[1] << 8) {
+        switch (data[1] << 8 | data[0]) {
             case 0:     { (*camera)->lens_fov = SEEK_FOV_WIDE;   break; }
             case 1:     { (*camera)->lens_fov = SEEK_FOV_NARROW; break; }
             case 65535: { (*camera)->lens_fov = SEEK_FOV_WIDE;   break; }
@@ -58,7 +65,7 @@ read_info:;
     (*camera)->lens_focus = SEEK_FOCUS_NONE;
     res = device->get_factory_setting(device, SEEK_LENS_FOCUS, data, 2);
     if (!res) {
-        switch (data[0] | data[1] << 8) {
+        switch (data[1] << 8 | data[0]) {
             case 0:     { (*camera)->lens_focus = SEEK_FOCUS_FIXED;  break; }
             case 1:     { (*camera)->lens_focus = SEEK_FOCUS_MANUAL; break; }
             case 65535: { (*camera)->lens_focus = SEEK_FOCUS_FIXED;  break; }
