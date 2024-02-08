@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "openseek/camera.h"
@@ -6,17 +7,68 @@
 #define SEEK_PRODUCT_ID     0x0010
 #define SEEK_PRO_PRODUCT_ID 0x0011
 
+/* ---------------------------------------- Pretty ---------------------------------------- */
+
+char *pretty_type(seekcamera_t *camera) {
+    char *pretty = malloc(sizeof(char) * 11); // len("CompactPRO") = 10
+    switch (camera->type) {
+        default:
+        case SEEK_COMPACT:     { sprintf(pretty, "Compact");    break; }
+        case SEEK_COMPACT_PRO: { sprintf(pretty, "CompactPRO"); break; }
+    }
+    return pretty;
+}
+
+char *pretty_serial_no(seekcamera_t *camera) {
+    char *pretty = malloc(sizeof(char) * 25);
+    sprintf(
+        pretty, "%c%c%c%c%c%c%c%c%c%c%c%c",
+        camera->serial_no[0], camera->serial_no[1], camera->serial_no[2], camera->serial_no[3],
+        camera->serial_no[4], camera->serial_no[5], camera->serial_no[6], camera->serial_no[7],
+        camera->serial_no[8], camera->serial_no[9], camera->serial_no[10], camera->serial_no[11]
+    );
+    return pretty;
+}
+
+char *pretty_lens_fov(seekcamera_t *camera) {
+    char *pretty = malloc(sizeof(char) * 7); // len("Narrow") = 6
+    switch (camera->lens_fov) {
+        default:
+        case SEEK_FOV_WIDE:   { sprintf(pretty, "Wide");   break; }
+        case SEEK_FOV_NARROW: { sprintf(pretty, "Narrow"); break; }
+        case SEEK_FOV_NONE:   { sprintf(pretty, "None");   break; }
+    }
+    return pretty;
+}
+
+char *pretty_lens_focus(seekcamera_t *camera) {
+    char *pretty = malloc(sizeof(char) * 7); // len("Manual") = 7
+    switch (camera->lens_focus) {
+        default:
+        case SEEK_FOCUS_FIXED:  { sprintf(pretty, "Fixed");  break; }
+        case SEEK_FOCUS_MANUAL: { sprintf(pretty, "Manual"); break; }
+        case SEEK_FOCUS_NONE:   { sprintf(pretty, "None");   break; }
+    }
+    return pretty;
+}
+
 seekerror_t seek_init_camera(seekcamera_t **camera, seekdevice_t *device) {
     *camera = (seekcamera_t*)calloc(1, sizeof(seekcamera_t));
     if (!(*camera)) return SEEK_ERROR_NO_MEM;
 
     (*camera)->device = device;
 
+    (*camera)->pretty_type       = &pretty_type;
+    (*camera)->pretty_serial_no  = &pretty_serial_no;
+    (*camera)->pretty_lens_fov   = &pretty_lens_fov;
+    (*camera)->pretty_lens_focus = &pretty_lens_focus;
+
     if (!device) {
         seekerror_t res = seek_init_device(
             &(*camera)->device, SEEK_VENDOR_ID, SEEK_PRODUCT_ID,
             /* options */ SEEK_READ_FW_VERSION | SEEK_READ_CHIP_ID
         );
+        device = (*camera)->device;
         if (!res) goto read_info; // gotos?!?! The devil!!
 
         (*camera)->type = SEEK_COMPACT_PRO;
@@ -26,16 +78,17 @@ seekerror_t seek_init_camera(seekcamera_t **camera, seekdevice_t *device) {
             &(*camera)->device, SEEK_VENDOR_ID, SEEK_PRO_PRODUCT_ID,
             /* options */ SEEK_READ_FW_VERSION | SEEK_READ_CHIP_ID
         );
-        if (!res) return res;
+        device = (*camera)->device;
+        if (res) return res;
     } else {
         struct libusb_device_descriptor descriptor;
         int res = libusb_get_device_descriptor(libusb_get_device(device->handle), &descriptor);
         if (res < 0) return SEEK_ERROR_UNKNOWN;
 
         if (descriptor.idProduct == SEEK_PRODUCT_ID) {
-            (*camera)->type = SEEK_COMPACT_PRO;
-        } else {
             (*camera)->type = SEEK_COMPACT;
+        } else {
+            (*camera)->type = SEEK_COMPACT_PRO;
         }
     }
 

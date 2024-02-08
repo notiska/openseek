@@ -1,6 +1,8 @@
 #ifndef _CAMERA_H
 #define _CAMERA_H
 
+#include <stdbool.h>
+
 #include "openseek/device.h"
 #include "openseek/error.h"
 
@@ -54,6 +56,19 @@ struct _SeekCamera {
 
     seeklens_fov_t    lens_fov;
     seeklens_focus_t  lens_focus;
+
+    bool              _invert_shutter;
+    bool              _auto_shutter;
+
+    // TODO: Frame type
+    // seekerror_t (*get_frame)(seekcamera_t *camera);
+
+    /* ------------------------------ Pretty ------------------------------ */
+
+    char*       (*pretty_type)(seekcamera_t *camera);
+    char*  (*pretty_serial_no)(seekcamera_t *camera);
+    char*   (*pretty_lens_fov)(seekcamera_t *camera);
+    char* (*pretty_lens_focus)(seekcamera_t *camera);
 };
 
 /**

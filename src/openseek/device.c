@@ -39,9 +39,22 @@ int _request_get(seekdevice_t *device, _seekcommand_t command, unsigned char *da
 
 /* ---------------------------------------- Public ---------------------------------------- */
 
+seekerror_t shutter_command(seekdevice_t *device, seekshutter_command_t command) {
+    // Note that 0xfc also works (doesn't return an error) and takes the subcommands 0x00, 0x01. None of these actually
+    // appear to do anything, though.
+    unsigned char data[4] = { 0xff, 0x00, (unsigned char)command, (unsigned char)(command >> 8) };
+
+    int res = _request_set(device, _SEEK_TOGGLE_SHUTTER, data, 4);
+    if (res != 4) {
+        return res < 0 ? -res : SEEK_ERROR_UNKNOWN;
+    }
+    return SEEK_ERROR_NONE;
+}
+
 seekerror_t start_frame_transfer(seekdevice_t *device, int frame_size) {
     unsigned char data[4] = { (unsigned char)frame_size, (unsigned char)(frame_size >> 8) };
-    return _request_get(device, _SEEK_START_GET_IMAGE_TRANSFER, data, 4);
+    int res = _request_get(device, _SEEK_START_GET_IMAGE_TRANSFER, data, 4);
+    return res < 0 ? -res : SEEK_ERROR_NONE;
 }
 
 seekerror_t get_firmware_info(seekdevice_t *device, seekfirmare_feature_t feature, unsigned char *data, int data_len) {
@@ -50,7 +63,7 @@ seekerror_t get_firmware_info(seekdevice_t *device, seekfirmare_feature_t featur
     int res = _request_set(device, _SEEK_SET_FIRMWARE_INFO_FEATURES, feature_data, 2);
     if (res < 0) return -res;
 
-    res = _request_set(device, _SEEK_GET_FIRMWARE_INFO, data, data_len);
+    res = _request_get(device, _SEEK_GET_FIRMWARE_INFO, data, data_len);
     if (res != data_len) {
         return res < 0 ? -res : SEEK_ERROR_UNKNOWN; // TODO: Underflow error.
     }
@@ -173,6 +186,7 @@ seekerror_t seek_init_device(seekdevice_t **device, int vendor_id, int product_i
     (*device)->_request_set = &_request_set;
     (*device)->_request_get = &_request_get;
 
+    (*device)->shutter_command      = &shutter_command;
     (*device)->start_frame_transfer = &start_frame_transfer;
     (*device)->get_firmware_info    = &get_firmware_info;
     (*device)->get_factory_setting  = &get_factory_setting;
