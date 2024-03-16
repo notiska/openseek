@@ -1,0 +1,58 @@
+temperature_CintLut() {
+    short format_mask = (1 << temp_data->window_format) - 1; // 0x3fff, 14 bits per pixel
+
+    for (int y = 0; y < temp_data->window_height; ++y) {
+        for (int x = 0; x < temp_data->window_width; ++x) {
+            int arr_x = x + raw->window_offset_x;
+            int arr_y = y + raw->window_offset_y; 
+
+            unsigned short pixel = raw->array[raw->width * arr_y + arr_x];
+
+            if (pixel > 14999) {
+                unsigned int temp = cal->array[pixel & format_mask];
+                if (temp > 65535) temp |= 0xffff;
+                dest->array[y * dest->width + x] = temp;
+            } else {
+                ...
+            }
+        }
+    }
+}
+
+processing pipeline:
+ - "temperature" pre-processing:
+   - Compact frame ID is frame[10], CompactPRO is frame[2]
+   - for Compact, pre-process ID is 14 if (frame[0] == 30792 && frame[1] == 37371)
+   - for CompactPRO, skip entirely if frame[0] != 1401
+   - for CompactPRO, skip entirely if frame[325, y] != (frame[1] << 9 | y & 0x1ff) for each row y
+
+   - frames (ID):
+     - 0:
+     - 2: skip entirely
+
+     - 1: (calibration frame) temperature_CintLut + temp coefficient lsm
+     - 8: (calibration frame) temperature_CintLut + copy + temp coefficient lsm
+
+     - 3:
+     - 15:
+     - 16:
+     - 21: (normal frame) temperature_CintLut + temp correction lsm + bad pixel correction
+
+     - 4: gain coefficient + copy window 1 -> 2 + bad pixel detection
+     - 5: bad pixel detection
+
+     - 6: temperature_CintLut
+     - 7: ??????????????
+     - 10: gain coefficient
+
+     - 23: temperature_CintLut
+     - 24: temperature_CintLut + temp coefficient lsm
+
+     - default: no pre-processing
+
+ - filter processing:
+   - sbnuc processing (scene-based non-uniformity correction)
+   - rcoffset processing (TBD)
+   - gradient processing
+   - peak limit processing
+   - aslpf processing (adaptive spatial low pass filter) https://www.nv5geospatialsoftware.com/docs/LowPassFilter.html

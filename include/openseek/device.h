@@ -157,7 +157,7 @@ enum SeekInitOptions {
  * @param vendor_id The USB vendor ID.
  * @param product_id The USB product ID.
  * @param options The initialisation options, see {@link SeekInitOptions}.
- * @return 0 if successful, otherwise an error code.
+ * @return An error code.
  */
 // TODO: Custom errors.
 seekerror_t seek_init_device(seekdevice_t **device, int vendor_id, int product_id, int options);

@@ -202,46 +202,42 @@ seekerror_t seek_init_device(seekdevice_t **device, int vendor_id, int product_i
     (*device)->pretty_opmode     = &pretty_opmode;
     (*device)->pretty_platform   = &pretty_platform;
 
+    seekerror_t res;
+
 #ifndef _WIN32
-    {
-        seekerror_t res;
-        switch (libusb_attach_kernel_driver((*device)->handle, INTERFACE)) {
-            case LIBUSB_SUCCESS:
-            case LIBUSB_ERROR_NOT_SUPPORTED:
-            // Not an issue, necessarily.
-            case LIBUSB_ERROR_NOT_FOUND:     { res = SEEK_ERROR_NONE;        break; }
+    switch (libusb_attach_kernel_driver((*device)->handle, INTERFACE)) {
+        case LIBUSB_SUCCESS:
+        case LIBUSB_ERROR_NOT_SUPPORTED:
+        // Not an issue, necessarily.
+        case LIBUSB_ERROR_NOT_FOUND:     { res = SEEK_ERROR_NONE;        break; }
 
-            default:
-            case LIBUSB_ERROR_INVALID_PARAM: { res = SEEK_ERROR_UNKNOWN;     break; }                
+        default:
+        case LIBUSB_ERROR_INVALID_PARAM: { res = SEEK_ERROR_UNKNOWN;     break; }                
 
-            case LIBUSB_ERROR_NO_DEVICE:     { res = SEEK_ERROR_NO_DEVICE;   break; }
-            case LIBUSB_ERROR_BUSY:          { res = SEEK_ERROR_DEVICE_BUSY; break; }
-        }
-        if (res) {
-            libusb_close((*device)->handle);
-            free(*device);
-            return res;
-        }
+        case LIBUSB_ERROR_NO_DEVICE:     { res = SEEK_ERROR_NO_DEVICE;   break; }
+        case LIBUSB_ERROR_BUSY:          { res = SEEK_ERROR_DEVICE_BUSY; break; }
+    }
+    if (res) {
+        libusb_close((*device)->handle);
+        free(*device);
+        return res;
     }
 #endif // _WIN32
 
-    {
-        seekerror_t res;
-        switch (libusb_claim_interface((*device)->handle, INTERFACE)) {
-            case LIBUSB_SUCCESS:         { res = SEEK_ERROR_NONE;        break; }
-            default:
-            case LIBUSB_ERROR_NOT_FOUND: { res = SEEK_ERROR_UNKNOWN;     break; }
-            case LIBUSB_ERROR_BUSY:      { res = SEEK_ERROR_DEVICE_BUSY; break; }
-            case LIBUSB_ERROR_NO_DEVICE: { res = SEEK_ERROR_NO_DEVICE;   break; }
-        }
-        if (res) {
+    switch (libusb_claim_interface((*device)->handle, INTERFACE)) {
+        case LIBUSB_SUCCESS:         { res = SEEK_ERROR_NONE;        break; }
+        default:
+        case LIBUSB_ERROR_NOT_FOUND: { res = SEEK_ERROR_UNKNOWN;     break; }
+        case LIBUSB_ERROR_BUSY:      { res = SEEK_ERROR_DEVICE_BUSY; break; }
+        case LIBUSB_ERROR_NO_DEVICE: { res = SEEK_ERROR_NO_DEVICE;   break; }
+    }
+    if (res) {
 #ifndef _WIN32
-            libusb_attach_kernel_driver((*device)->handle, INTERFACE);
+        libusb_attach_kernel_driver((*device)->handle, INTERFACE);
 #endif // _WIN32
-            libusb_close((*device)->handle);
-            free(*device);
-            return res;
-        }
+        libusb_close((*device)->handle);
+        free(*device);
+        return res;
     }
 
     // set_platform(*device, SEEK_TARGET_ANDROID);

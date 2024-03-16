@@ -1,0 +1,11 @@
+-- GENERAL --
+
+0x0000000: success
+0x0000200: invalid data
+
+-- SHUTTER --
+
+0x0010200: invalid shutter command
+0x0020200: invalid shutter subcommand
+
+0x8010300: not supported ?
