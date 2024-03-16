@@ -1,6 +1,6 @@
 # OpenSeek
 
-WIP - I am still working on reverse engineering the camera.
+**WIP** - I am still working on reverse engineering the camera, the library is not functional.
 
 A library to interface with the [Seek Thermal Compact](https://www.thermal.com/compact-series.html) line of cameras.  
 
