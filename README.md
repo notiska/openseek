@@ -1,6 +1,17 @@
 # OpenSeek
 
-**WIP** - I am still working on reverse engineering the camera, the library is not functional.
+**Archived** as I am no longer working with the Seek Thermal devices.
+
+However, feel free to use any of the RE work I've added to this repo.
+
+### Why?
+
+Unfortunately, the task got too time consuming.  
+It also was apparent that the advertised performance of the devices was due to image processing tricks that I simply would not be able to replicate.
+
+This, paired with my research into the [Fotric 226b](https://github.com/notiska/fotric) device led me to abandon this project.
+
+## Old README ##
 
 A library to interface with the [Seek Thermal Compact](https://www.thermal.com/compact-series.html) line of cameras.  
 
